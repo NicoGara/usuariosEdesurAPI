@@ -1,0 +1,4 @@
+// filepath: c:\produccion-minipc\edesur\.dockerignore
+node_modules
+npm-debug.log
+.env

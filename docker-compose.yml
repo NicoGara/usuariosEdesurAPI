@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: app-node
+    ports:
+      - "3000:3000"
+    expose:
+      - "3000"
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: ngrok
+    environment:
+      - NGROK_AUTHTOKEN=2umPjMwaf4DL3Xijc6noyF3MPQQ_5fHrefVVcQGENwwS3eEAB # Reemplaza con tu token de ngrok
+    command: http app:3000
+    network_mode: "service:app" # Conecta ngrok directamente al contenedor de la app
