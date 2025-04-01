@@ -1,57 +1,42 @@
-import puppeteer from "puppeteer";
+import axios from 'axios';
+import vm from 'vm';
 
-const cUsers={
+const cUsers = {
     getUsers: async (req, res) => {
         try {
-            const primerNumero = await obtenerPrimerNumero();
-            res.json({ primerNumero });
-          } catch (error) {
-            res.status(500).json({ error: 'No se pudo obtener el valor' });
-          }
+            const usuariosSinLuz = await obtenerUsuariosSinLuz();
+            res.json({ total: usuariosSinLuz });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+};
+
+async function obtenerUsuariosSinLuz() {
+    const url = "https://www.enre.gov.ar/paginacorte/js/data_EDS.js?";
+    
+    try {
+        const { data } = await axios.get(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36',
+                'Referer': 'https://www.enre.gov.ar/paginacorte/tabla_cortes_edesur.html'
+            }
+        });
+
+        // Ejecutar el código JS en un sandbox
+        const sandbox = { data: null };
+        vm.createContext(sandbox);
+        vm.runInContext(data, sandbox);
+        
+        // Acceder al objeto data directamente
+        const parsedData = sandbox.data;
+        
+        return parseInt(parsedData.totalUsuariosSinSuministro.replace(/\./g, ''), 10);
+        
+    } catch (error) {
+        console.error("Error detallado:", error);
+        throw new Error("Error al procesar los datos: " + error.message);
     }
 }
-
-async function obtenerPrimerNumero() {
-    const url ="https://www.argentina.gob.ar/enre/estado-del-servicio-electrico-de-edesur";
-  
-    const browser = await puppeteer.launch({ headless: true ,   args: ['--no-sandbox', '--disable-setuid-sandbox']});
-    const page = await browser.newPage();
-  
-    await page.goto(url, { waitUntil: "networkidle2" });
-  
-    // Buscar el frame que contiene la tabla
-    const frame = page
-      .frames()
-      .find((f) =>
-        f
-          .url()
-          .includes(
-            "https://www.enre.gov.ar/paginacorte/tabla_cortes_edesur.html"
-          )
-      );
-    const text = await frame.evaluate(() => document.body.innerText);
-  
-    // Función para extraer el texto deseado mediante regex
-    function extraerTextoRegex(texto) {
-      const regex =
-        /TOTAL DE USUARIOS CON SUMINISTRO([\s\S]*?)DETALLE DE LOS CORTES/;
-      const match = texto.match(regex);
-      return match ? match[1].trim() : "";
-    }
-  
-    const resultado = extraerTextoRegex(text);
-  
-    // Extraer hasta el primer salto de línea
-    const indiceSalto = resultado.indexOf("\n");
-    const primerNumero =
-      indiceSalto !== -1
-        ? resultado.substring(0, indiceSalto).trim()
-        : resultado.trim();
-  
-    await browser.close();
-  
-    return primerNumero;
-  }
-
 
 export default cUsers;

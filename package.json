@@ -11,7 +11,7 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "express": "^4.21.2",
-        "puppeteer": "^24.4.0"
+        "axios": "^1.8.4",
+        "express": "^4.21.2"
     }
 }
